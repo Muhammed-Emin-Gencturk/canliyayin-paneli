@@ -42,14 +42,16 @@
       const card = document.createElement("div");
       card.className = "card";
       card.id = `card-${id}`;
-      const video = document.createElement("iframe");
-      video.src = stream.url;
-      video.loading = "lazy";
-      video.setAttribute("data-url", stream.url);
+
+      const iframe = document.createElement("iframe");
+      iframe.src = stream.url;
+      iframe.loading = "lazy";
+
       const info = document.createElement("div");
       info.className = "info";
-      info.innerHTML = `<h3>${id}</h3><p>Son görülme: ${new Date(stream.last_seen).toLocaleString()}</p>`;
-      card.appendChild(video);
+      info.innerHTML = `<h3>${id}</h3><p id="seen-${id}">Son görülme: ${new Date(stream.last_seen).toLocaleString()}</p>`;
+
+      card.appendChild(iframe);
       card.appendChild(info);
       return card;
     }
@@ -61,23 +63,18 @@
 
         for (const [id, stream] of Object.entries(data)) {
           const existing = document.getElementById(`card-${id}`);
-          if (existing) {
-            const iframe = existing.querySelector("iframe");
-            const currentUrl = iframe.getAttribute("data-url");
-            if (currentUrl !== stream.url) {
-              iframe.src = stream.url;
-              iframe.setAttribute("data-url", stream.url);
-            }
-
-            const info = existing.querySelector(".info p");
-            info.textContent = `Son görülme: ${new Date(stream.last_seen).toLocaleString()}`;
-          } else {
+          if (!existing) {
             const newCard = createCard(id, stream);
             container.appendChild(newCard);
+          } else {
+            const timeElement = document.getElementById(`seen-${id}`);
+            if (timeElement) {
+              timeElement.textContent = `Son görülme: ${new Date(stream.last_seen).toLocaleString()}`;
+            }
           }
         }
       } catch (e) {
-        container.innerHTML = "<p style='color:red'>Veri çekilemedi. Sunucuya ulaşılamıyor.</p>";
+        console.error("Veri alınamadı:", e);
       }
     }
 
