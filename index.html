@@ -34,29 +34,53 @@
 <body>
   <h1>Canlı Yayın Paneli</h1>
   <div class="grid" id="streamGrid"></div>
+
   <script>
+    const container = document.getElementById("streamGrid");
+
+    function createCard(id, stream) {
+      const card = document.createElement("div");
+      card.className = "card";
+      card.id = `card-${id}`;
+      const video = document.createElement("iframe");
+      video.src = stream.url;
+      video.loading = "lazy";
+      video.setAttribute("data-url", stream.url);
+      const info = document.createElement("div");
+      info.className = "info";
+      info.innerHTML = `<h3>${id}</h3><p>Son görülme: ${new Date(stream.last_seen).toLocaleString()}</p>`;
+      card.appendChild(video);
+      card.appendChild(info);
+      return card;
+    }
+
     async function fetchStreams() {
-      const container = document.getElementById("streamGrid");
-      container.innerHTML = "";
       try {
         const res = await fetch("https://gencturkstreamservices.onrender.com/get_streams");
         const data = await res.json();
+
         for (const [id, stream] of Object.entries(data)) {
-          const card = document.createElement("div");
-          card.className = "card";
-          const video = document.createElement("iframe");
-          video.src = stream.url;
-          const info = document.createElement("div");
-          info.className = "info";
-          info.innerHTML = `<h3>${id}</h3><p>Son görülme: ${new Date(stream.last_seen).toLocaleString()}</p>`;
-          card.appendChild(video);
-          card.appendChild(info);
-          container.appendChild(card);
+          const existing = document.getElementById(`card-${id}`);
+          if (existing) {
+            const iframe = existing.querySelector("iframe");
+            const currentUrl = iframe.getAttribute("data-url");
+            if (currentUrl !== stream.url) {
+              iframe.src = stream.url;
+              iframe.setAttribute("data-url", stream.url);
+            }
+
+            const info = existing.querySelector(".info p");
+            info.textContent = `Son görülme: ${new Date(stream.last_seen).toLocaleString()}`;
+          } else {
+            const newCard = createCard(id, stream);
+            container.appendChild(newCard);
+          }
         }
       } catch (e) {
         container.innerHTML = "<p style='color:red'>Veri çekilemedi. Sunucuya ulaşılamıyor.</p>";
       }
     }
+
     fetchStreams();
     setInterval(fetchStreams, 15000);
   </script>
